@@ -216,3 +216,38 @@ controller.hears(['create contact', 'new contact'], 'direct_message,direct_menti
     bot.startConversation(message, askFirstName);
 
 });
+
+controller.on('interactive_message_callback', function(bot, message) {
+    bot.replyInteractive(message, {
+        text: '...  ouh ...',
+        attachments: [
+            {
+                title: 'My buttons',
+                callback_id: 'TEST_123',
+                attachment_type: 'default',
+                actions: [
+                    {
+                        "name":"yes",
+                        "text": "Yes!",
+                        "value": "yes",
+                        "type": "button",
+                    },
+                    {
+                       "text": "No!",
+                        "name": "no",
+                        "value": "delete",
+                        "style": "danger",
+                        "type": "button",
+                        "confirm": {
+                          "title": "Are you sure?",
+                          "text": "This will do something!",
+                          "ok_text": "Yes",
+                          "dismiss_text": "No"
+                        }
+                    }
+                ]
+            }
+        ]
+    });
+
+});
