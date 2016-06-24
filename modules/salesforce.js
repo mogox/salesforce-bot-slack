@@ -162,7 +162,7 @@ let closeCase = caseId => {
               reject("An error as occurred");
           } else {
             var kase = resp.records[0];
-            acc.set('status', 'closed');
+            kase.set('status', 'closed');
             org.update({ sobject: kase}, function(err, resp){
               if(!err){
                 resolve(resp.records);
