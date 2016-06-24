@@ -76,6 +76,7 @@ controller.on('interactive_message_callback', function(bot, message) {
     if(commands[0] == "CASEACTION"){
       var reply;
       if(message.actions[0].name == "Close") {
+        salesforce.closeCase(message.actions[0].value);
         reply = "You have closed case: " + message.actions[0].value;
       }else{
         reply = "You have started case: " + message.actions[0].value;

@@ -151,6 +151,23 @@ let createCase = newCase => {
 
 };
 
+let closeCase = caseId => {
+
+  return new Promise((resolve, reject) => {
+      let q = "UPDATE CASE set status = 'closed' WHERE ID = '" + caseId + "' LIMIT 1";
+      console.log(q);
+      org.query({query: q}, (err, resp) => {
+          if (err) {
+              console.log(err);
+              reject("An error as occurred");
+          } else {
+              resolve(resp.records);
+          }
+      });
+  });
+
+};
+
 login();
 
 exports.org = org;
@@ -161,3 +178,4 @@ exports.findOpportunity = findOpportunity;
 exports.getTopOpportunities = getTopOpportunities;
 exports.createContact = createContact;
 exports.createCase = createCase;
+exports.closeCase = closeCase;
