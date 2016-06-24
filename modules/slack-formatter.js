@@ -116,13 +116,20 @@ let formatCases = kases => {
              "name": "AssignMe",
              "text": "Assign to me",
              "type": "button",
-             "value": "meme"
+             "style": "primary",
+             "value": kase.subject
       });
       actions.push({
              "name": "Complete",
-             "text": "Complete",
+             "text": "Mark as complete",
              "type": "button",
-             "value": "complete"
+             "confirm": {
+               "title": "Are you sure you want to mark it as complete?",
+               "text": "This will be marked as completed by you",
+               "ok_text": "Yes",
+               "dismiss_text": "No"
+             },
+             "value": kase.subject
       });
       attachments.push({
         color: case_color,
