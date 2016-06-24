@@ -25,7 +25,13 @@ let formatAccounts = accounts => {
                    "type": "button",
                    "value": "Reject"
             });
-            attachments.push({color: color, fields: fields, actions: actions});
+            attachments.push({
+                color: color,
+                fields: fields,
+                actions: actions,
+                callback_id: "TEST_123",
+              }
+            );
         });
         return attachments;
     } else {
