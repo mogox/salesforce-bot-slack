@@ -72,6 +72,12 @@ function trackBot(bot) {
 
 controller.on('interactive_message_callback', function(bot, message) {
 
+    var commands = message.callback_id.split(/\_/);
+    if(commands[0] == "CASEACTION"){
+      var reply = "Case has been assigned to you";
+      bot.replyInteractive(message, reply);
+      return;
+    }
     var ids = message.callback_id.split(/\-/);
     var user_id = ids[0];
     var item_id = ids[1];
