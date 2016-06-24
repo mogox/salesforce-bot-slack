@@ -12,7 +12,20 @@ let formatAccounts = accounts => {
             fields.push({title: "Link", value: "https://login.salesforce.com/" + account.getId(), short:true});
             fields.push({title: "Phone", value: account.get("Phone"), short:true});
             fields.push({title: "Address", value: account.get("BillingStreet") + ", " + account.get("BillingCity") + " " + account.get("BillingState"), short:true});
-            attachments.push({color: color, fields: fields});
+            let actions = []
+            actions.push({
+                   "name": "Approve",
+                   "text": "Approve",
+                   "type": "button",
+                   "value": "Approve"
+            });
+            actions.push({
+                   "name": "Reject",
+                   "text": "Reject",
+                   "type": "button",
+                   "value": "Reject"
+            });
+            attachments.push({color: color, fields: fields, actions: actions});
         });
         return attachments;
     } else {
