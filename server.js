@@ -1,6 +1,18 @@
 "use strict";
 
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
+const BOT_PORT = process.env.PORT || 3000;
+
+var express = require('express');
+var app = express();
+
+app.get('/', function (req, res) {
+  res.send('Hello World!');
+});
+
+app.listen(BOT_PORT, function () {
+  console.log('Example app listening on port: ' + BOT_PORT);
+});
 
 let Botkit = require('botkit'),
     formatter = require('./modules/slack-formatter'),
