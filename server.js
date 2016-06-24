@@ -74,10 +74,13 @@ controller.on('interactive_message_callback', function(bot, message) {
 
     var commands = message.callback_id.split(/\_/);
     if(commands[0] == "CASEACTION"){
-      console.log(commands[1]);
-      console.log("*********** ACTIONS **********");
-      console.log(message.actions);
-      var reply = "Case has been assigned to you " + message.actions[0].value;
+      var reply;
+      if(message.actions[0].name == "Close") {
+        reply = "You have closed case: " + message.actions[0].value;
+      }else{
+        reply = "You have started case: " + message.actions[0].value;
+      }
+
       bot.replyInteractive(message, reply);
       return;
     }

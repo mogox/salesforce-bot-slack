@@ -113,15 +113,15 @@ let formatCases = kases => {
       fields.push({title: "Description", value: kase.get("description"), short:false});
       let actions = []
       actions.push({
-             "name": "AssignMe",
-             "text": "Assign to me",
+             "name": "Start",
+             "text": "Start working on this",
              "type": "button",
              "style": "primary",
-             "value": kase.subject
+             "value": kase.getId()
       });
       actions.push({
-             "name": "Complete",
-             "text": "Mark as complete",
+             "name": "Close",
+             "text": "Mark as completed",
              "type": "button",
              "confirm": {
                "title": "Are you sure you want to mark it as complete?",
@@ -129,7 +129,7 @@ let formatCases = kases => {
                "ok_text": "Yes",
                "dismiss_text": "No"
              },
-             "value": kase.subject
+             "value": kase.getId()
       });
       attachments.push({
         color: case_color,
