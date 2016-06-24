@@ -1,240 +1,120 @@
-"use strict";
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+           ______     ______     ______   __  __     __     ______
+          /\  == \   /\  __ \   /\__  _\ /\ \/ /    /\ \   /\__  _\
+          \ \  __<   \ \ \/\ \  \/_/\ \/ \ \  _"-.  \ \ \  \/_/\ \/
+           \ \_____\  \ \_____\    \ \_\  \ \_\ \_\  \ \_\    \ \_\
+            \/_____/   \/_____/     \/_/   \/_/\/_/   \/_/     \/_/
 
-const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
-const BOT_PORT = process.env.PORT || 3000;
 
-var express = require('express');
-var app = express();
+This is a sample Slack Button application that adds a bot to one or many slack teams.
 
-app.get('/', function (req, res) {
-  res.send('Hello World!');
-});
+# RUN THE APP:
+  Create a Slack app. Make sure to configure the bot user!
+    -> https://api.slack.com/applications/new
+    -> Add the Redirect URI: http://localhost:3000/oauth
+  Run your bot from the command line:
+    clientId=<my client id> clientSecret=<my client secret> port=3000 node slackbutton_bot_interactivemsg.js
+# USE THE APP
+  Add the app to your Slack by visiting the login page:
+    -> http://localhost:3000/login
+  After you've added the app, try talking to your bot!
+# EXTEND THE APP:
+  Botkit has many features for building cool and useful bots!
+  Read all about it here:
+    -> http://howdy.ai/botkit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-app.post('/actions', function (req, res) {
-  res.json({
-    "actions": [
-      {
-        "name": "recommend",
-        "value": "yes"
-      }
-    ],
-    "callback_id": "TEST_123",
-    "team": {
-      "id": "T47563693",
-      "domain": "watermelonsugar"
-    },
-    "channel": {
-      "id": "C065W1189",
-      "name": "forgotten-works"
-    },
-    "user": {
-      "id": "U045VRZFT",
-      "name": "brautigan"
-    },
-    "action_ts": "1466766246.000002",
-    "attachment_id": "1",
-    "token": SLACK_BOT_TOKEN,
-    "original_message": "",
-    "response_url": "https://hooks.slack.com/actions/T47563693/"
-    }
-  );
-});
+/* Uses the slack button feature to offer a real time bot to multiple teams */
+var Botkit = require('botkit');
 
-app.listen(BOT_PORT, function () {
-  console.log('Example app listening on port: ' + BOT_PORT);
-});
+if (!process.env.clientId || !process.env.clientSecret || !process.env.port) {
+  console.log('Error: Specify clientId clientSecret and port in environment');
+  process.exit(1);
+}
 
-let Botkit = require('botkit'),
-    formatter = require('./modules/slack-formatter'),
-    salesforce = require('./modules/salesforce'),
 
-    controller = Botkit.slackbot(),
+var controller = Botkit.slackbot({
+  // interactive_replies: true, // tells botkit to send button clicks into conversations
+  json_file_store: './db_slackbutton_bot/',
+}).configureSlackApp(
+  {
+    clientId: process.env.clientId,
+    clientSecret: process.env.clientSecret,
+    scopes: ['bot'],
+  }
+);
 
-    bot = controller.spawn({
-        token: SLACK_BOT_TOKEN
-    });
+var formatter = require('./modules/slack-formatter');
+var salesforce = require('./modules/salesforce');
 
-bot.startRTM(err => {
+controller.setupWebserver(process.env.port,function(err,webserver) {
+  controller.createWebhookEndpoints(controller.webserver);
+
+  controller.createOauthEndpoints(controller.webserver,function(err,req,res) {
     if (err) {
-        throw new Error('Could not connect to Slack');
+      res.status(500).send('ERROR: ' + err);
+    } else {
+      res.send('Success!');
     }
+  });
 });
 
 
-controller.hears(['help'], 'direct_message,direct_mention,mention', (bot, message) => {
-    bot.reply(message, {
-        text: `You can ask me things like:
-    "Search account Acme" or "Search Acme in acccounts"
-    "Search contact Lisa Smith" or "Search Lisa Smith in contacts"
-    "Search opportunity Big Deal"
-    "Create contact"
-    "Create case"`
-    });
-});
+// just a simple way to make sure we don't
+// connect to the RTM twice for the same team
+var _bots = {};
+function trackBot(bot) {
+  _bots[bot.config.token] = bot;
+}
 
-
-controller.hears(['search account (.*)', 'search (.*) in accounts'], 'direct_message,direct_mention,mention', (bot, message) => {
-    let name = message.match[1];
-    salesforce.findAccount(name)
-        .then(accounts => bot.reply(message, {
-            text: "I found these accounts matching  '" + name + "':",
-            attachments: formatter.formatAccounts(accounts)
-        }))
-        .catch(error => bot.reply(message, error));
-});
-
-controller.hears(['search contact (.*)', 'find contact (.*)'], 'direct_message,direct_mention,mention', (bot, message) => {
-    let name = message.match[1];
-    salesforce.findContact(name)
-        .then(contacts => bot.reply(message, {
-            text: "I found these contacts matching  '" + name + "':",
-            attachments: formatter.formatContacts(contacts)
-        }))
-        .catch(error => bot.reply(message, error));
-});
-
-controller.hears(['top (.*) deals', 'top (.*) opportunities'], 'direct_message,direct_mention,mention', (bot, message) => {
-    let count = message.match[1];
-    salesforce.getTopOpportunities(count)
-        .then(opportunities => bot.reply(message, {
-            text: "Here are your top " + count + " opportunities:",
-            attachments: formatter.formatOpportunities(opportunities)
-        }))
-        .catch(error => bot.reply(message, error));
-});
-
-controller.hears(['search opportunity (.*)', 'find opportunity (.*)'], 'direct_message,direct_mention,mention', (bot, message) => {
-
-    let name = message.match[1];
-    salesforce.findOpportunity(name)
-        .then(opportunities => bot.reply(message, {
-            text: "I found these opportunities matching  '" + name + "':",
-            attachments: formatter.formatOpportunities(opportunities)
-        }))
-        .catch(error => bot.reply(message, error));
-
-});
-
-controller.hears(['create case', 'new case'], 'direct_message,direct_mention,mention', (bot, message) => {
-
-    let subject,
-        description;
-
-    let askSubject = (response, convo) => {
-
-        convo.ask("What's the subject?", (response, convo) => {
-            subject = response.text;
-            askDescription(response, convo);
-            convo.next();
-        });
-
-    };
-
-    let askDescription = (response, convo) => {
-
-        convo.ask('Enter a description for the case', (response, convo) => {
-            description = response.text;
-            salesforce.createCase({subject: subject, description: description})
-                .then(_case => {
-                    bot.reply(message, {
-                        text: "I created the case:",
-                        attachments: formatter.formatCase(_case)
-                    });
-                    convo.next();
-                })
-                .catch(error => {
-                    bot.reply(message, error);
-                    convo.next();
-                });
-        });
-
-    };
-
-    bot.reply(message, "OK, I can help you with that!");
-    bot.startConversation(message, askSubject);
-
-});
-
-controller.hears(['create contact', 'new contact'], 'direct_message,direct_mention,mention', (bot, message) => {
-
-    let firstName,
-        lastName,
-        title,
-        phone;
-
-    let askFirstName = (response, convo) => {
-
-        convo.ask("What's the first name?", (response, convo) => {
-            firstName = response.text;
-            askLastName(response, convo);
-            convo.next();
-        });
-
-    };
-
-    let askLastName = (response, convo) => {
-
-        convo.ask("What's the last name?", (response, convo) => {
-            lastName = response.text;
-            askTitle(response, convo);
-            convo.next();
-        });
-
-    };
-
-    let askTitle = (response, convo) => {
-
-        convo.ask("What's the title?", (response, convo) => {
-            title = response.text;
-            askPhone(response, convo);
-            convo.next();
-        });
-
-    };
-
-    let askPhone = (response, convo) => {
-
-        convo.ask("What's the phone number?", (response, convo) => {
-            phone = response.text;
-            salesforce.createContact({firstName: firstName, lastName: lastName, title: title, phone: phone})
-                .then(contact => {
-                    bot.reply(message, {
-                        text: "I created the contact:",
-                        attachments: formatter.formatContact(contact)
-                    });
-                    convo.next();
-                })
-                .catch(error => {
-                    bot.reply(message, error);
-                    convo.next();
-                });
-        });
-
-    };
-
-    bot.reply(message, "OK, I can help you with that!");
-    bot.startConversation(message, askFirstName);
-
-});
 
 controller.on('interactive_message_callback', function(bot, message) {
-    bot.replyInteractive(message, {
-        text: '...  ouh ...',
-        attachments: [
-            {
-                title: 'My buttons',
-                callback_id: 'TEST_123',
+
+    var ids = message.callback_id.split(/\-/);
+    var user_id = ids[0];
+    var item_id = ids[1];
+
+    controller.storage.users.get(user_id, function(err, user) {
+
+        if (!user) {
+            user = {
+                id: user_id,
+                list: []
+            }
+        }
+
+        for (var x = 0; x < user.list.length; x++) {
+            if (user.list[x].id == item_id) {
+                if (message.actions[0].value=='flag') {
+                    user.list[x].flagged = !user.list[x].flagged;
+                }
+                if (message.actions[0].value=='delete') {
+                    user.list.splice(x,1);
+                }
+            }
+        }
+
+
+        var reply = {
+            text: 'Here is <@' + user_id + '>s list:',
+            attachments: [],
+        }
+
+        for (var x = 0; x < user.list.length; x++) {
+            reply.attachments.push({
+                title: user.list[x].text + (user.list[x].flagged? ' *FLAGGED*' : ''),
+                callback_id: user_id + '-' + user.list[x].id,
                 attachment_type: 'default',
                 actions: [
                     {
-                        "name":"yes",
-                        "text": "Yes!",
-                        "value": "yes",
+                        "name":"flag",
+                        "text": ":waving_black_flag: Flag",
+                        "value": "flag",
                         "type": "button",
                     },
                     {
-                       "text": "No!",
-                        "name": "no",
+                       "text": "Delete",
+                        "name": "delete",
                         "value": "delete",
                         "style": "danger",
                         "type": "button",
@@ -246,8 +126,231 @@ controller.on('interactive_message_callback', function(bot, message) {
                         }
                     }
                 ]
+            })
+        }
+
+        bot.replyInteractive(message, reply);
+        controller.storage.users.save(user);
+
+
+    });
+
+});
+
+
+controller.on('create_bot',function(bot,config) {
+
+  if (_bots[bot.config.token]) {
+    // already online! do nothing.
+  } else {
+    bot.startRTM(function(err) {
+
+      if (!err) {
+        trackBot(bot);
+      }
+
+      bot.startPrivateConversation({user: config.createdBy},function(err,convo) {
+        if (err) {
+          console.log(err);
+        } else {
+          convo.say('I am a bot that has just joined your team');
+          convo.say('You must now /invite me to a channel so that I can be of use!');
+        }
+      });
+
+    });
+  }
+
+});
+
+
+// Handle events related to the websocket connection to Slack
+controller.on('rtm_open',function(bot) {
+  console.log('** The RTM api just connected!');
+});
+
+controller.on('rtm_close',function(bot) {
+  console.log('** The RTM api just closed');
+  // you may want to attempt to re-open
+});
+
+
+controller.hears(['add (.*)'],'direct_mention,direct_message',function(bot,message) {
+
+    controller.storage.users.get(message.user, function(err, user) {
+
+        if (!user) {
+            user = {
+                id: message.user,
+                list: []
+            }
+        }
+
+        user.list.push({
+            id: message.ts,
+            text: message.match[1],
+        });
+
+        bot.reply(message,'Added to list. Say `list` to view or manage list.');
+
+        controller.storage.users.save(user);
+
+    });
+});
+
+
+controller.hears(['list','tasks'],'direct_mention,direct_message',function(bot,message) {
+
+    controller.storage.users.get(message.user, function(err, user) {
+
+        if (!user) {
+            user = {
+                id: message.user,
+                list: []
+            }
+        }
+
+        if (!user.list || !user.list.length) {
+            user.list = [
+                {
+                    'id': 1,
+                    'text': 'Test Item 1'
+                },
+                {
+                    'id': 2,
+                    'text': 'Test Item 2'
+                },
+                {
+                    'id': 3,
+                    'text': 'Test Item 3'
+                }
+            ]
+        }
+
+        var reply = {
+            text: 'Here is your list. Say `add <item>` to add items.',
+            attachments: [],
+        }
+
+        for (var x = 0; x < user.list.length; x++) {
+            reply.attachments.push({
+                title: user.list[x].text + (user.list[x].flagged? ' *FLAGGED*' : ''),
+                callback_id: message.user + '-' + user.list[x].id,
+                attachment_type: 'default',
+                actions: [
+                    {
+                        "name":"flag",
+                        "text": ":waving_black_flag: Flag",
+                        "value": "flag",
+                        "type": "button",
+                    },
+                    {
+                       "text": "Delete",
+                        "name": "delete",
+                        "value": "delete",
+                        "style": "danger",
+                        "type": "button",
+                        "confirm": {
+                          "title": "Are you sure?",
+                          "text": "This will do something!",
+                          "ok_text": "Yes",
+                          "dismiss_text": "No"
+                        }
+                    }
+                ]
+            })
+        }
+
+        bot.reply(message, reply);
+
+        controller.storage.users.save(user);
+
+    });
+
+});
+
+controller.hears('interactive', 'direct_message', function(bot, message) {
+
+    bot.reply(message, {
+        attachments:[
+            {
+                title: 'Do you want to interact with my buttons?',
+                callback_id: '123',
+                attachment_type: 'default',
+                actions: [
+                    {
+                        "name":"yes",
+                        "text": "Yes",
+                        "value": "yes",
+                        "type": "button",
+                    },
+                    {
+                        "name":"no",
+                        "text": "No",
+                        "value": "no",
+                        "type": "button",
+                    }
+                ]
             }
         ]
     });
+});
+
+
+controller.hears('^stop','direct_message',function(bot,message) {
+  bot.reply(message,'Goodbye');
+  bot.rtm.close();
+});
+
+controller.hears(['search account (.*)', 'search (.*) in accounts'], 'direct_message,direct_mention,mention', (bot, message) => {
+    var name = message.match[1];
+    salesforce.findAccount(name)
+        .then(accounts => bot.reply(message, {
+            text: "I found these accounts matching  '" + name + "':",
+            attachments: formatter.formatAccounts(accounts)
+        }))
+        .catch(error => bot.reply(message, error));
+});
+
+controller.hears(['search contact (.*)', 'find contact (.*)'], 'direct_message,direct_mention,mention', (bot, message) => {
+    var name = message.match[1];
+    salesforce.findContact(name)
+        .then(contacts => bot.reply(message, {
+            text: "I found these contacts matching  '" + name + "':",
+            attachments: formatter.formatContacts(contacts)
+        }))
+        .catch(error => bot.reply(message, error));
+});
+
+
+controller.on(['direct_message','mention','direct_mention'],function(bot,message) {
+  bot.api.reactions.add({
+    timestamp: message.ts,
+    channel: message.channel,
+    name: 'robot_face',
+  },function(err) {
+    if (err) { console.log(err) }
+    bot.reply(message,'I heard you loud and clear boss.');
+  });
+});
+
+controller.storage.teams.all(function(err,teams) {
+
+  if (err) {
+    throw new Error(err);
+  }
+
+  // connect all teams with bots up to slack!
+  for (var t  in teams) {
+    if (teams[t].bot) {
+      controller.spawn(teams[t]).startRTM(function(err, bot) {
+        if (err) {
+          console.log('Error connecting bot to Slack:',err);
+        } else {
+          trackBot(bot);
+        }
+      });
+    }
+  }
 
 });
