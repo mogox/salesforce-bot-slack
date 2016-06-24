@@ -74,7 +74,7 @@ controller.on('interactive_message_callback', function(bot, message) {
 
     var commands = message.callback_id.split(/\_/);
     if(commands[0] == "CASEACTION"){
-      console.log(commans[1]);
+      console.log(commands[1]);
       console.log("*********** ACTIONS **********");
       console.log(message.actions);
       var reply = "Case has been assigned to you " + message.actions[0].value;
