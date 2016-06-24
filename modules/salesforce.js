@@ -32,6 +32,7 @@ let findAccount = name => {
 
     return new Promise((resolve, reject) => {
         let q = "SELECT Id, Name, Phone, BillingStreet, BillingCity, BillingState FROM Account WHERE Name LIKE '%" + name + "%' LIMIT 5";
+        console.log(q);
         org.query({query: q}, (err, resp) => {
             if (err) {
                 console.log(err);
@@ -43,6 +44,23 @@ let findAccount = name => {
     });
 
 };
+
+let findCase = acccount_id => {
+    return new Promise((resolve, reject) => {
+        let q = "SELECT Id, subject, description, status, origin FROM Case WHERE AccountId = '" + acccount_id + "' LIMIT 5";
+        console.log(q);
+        org.query({query: q}, (err, resp) => {
+            if (err) {
+                console.log(err);
+                reject("An error as occurred");
+            } else {
+                resolve(resp.records);
+            }
+        });
+    });
+
+};
+
 
 let findContact = name => {
 
@@ -138,6 +156,7 @@ login();
 exports.org = org;
 exports.findAccount = findAccount;
 exports.findContact = findContact;
+exports.findCase = findCase;
 exports.findOpportunity = findOpportunity;
 exports.getTopOpportunities = getTopOpportunities;
 exports.createContact = createContact;

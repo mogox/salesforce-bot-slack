@@ -1,6 +1,7 @@
 "use strict";
 
 let color = "#009cdb";
+let case_color  = "#009900";
 
 let formatAccounts = accounts => {
 
@@ -10,7 +11,8 @@ let formatAccounts = accounts => {
             let fields = [];
             fields.push({title: "Name", value: account.get("Name"), short:true});
             fields.push({title: "Link", value: "https://login.salesforce.com/" + account.getId(), short:true});
-            info = "";
+            fields.push({title: "ID", value: account.getId(), short:true});
+            var info = "";
             if(account.get("Phone")){
               info += ' ' + account.get("Phone")
             }
@@ -24,24 +26,9 @@ let formatAccounts = accounts => {
               info += ' ' +  account.get("BillingState")
             }
             fields.push({title: "Info", value: info, short:true});
-            let actions = []
-            actions.push({
-                   "name": "Approve",
-                   "text": "Approve",
-                   "type": "button",
-                   "value": "Approve"
-            });
-            actions.push({
-                   "name": "Reject",
-                   "text": "Reject",
-                   "type": "button",
-                   "value": "Reject"
-            });
             attachments.push({
                 color: color,
-                fields: fields,
-                actions: actions,
-                callback_id: "TEST_123",
+                fields: fields
               }
             );
         });
@@ -114,8 +101,44 @@ let formatCase = _case => {
 
 };
 
+let formatCases = kases => {
+  let attachments = [];
+  if (kases && kases.length>0) {
+    console.log("Formatting cases: #{kases.length}");
+    kases.forEach(kase => {
+      let fields = [];
+      fields.push({title: "Subject", value: kase.get("subject"), short:false});
+      fields.push({title: "Link", value: "https://login.salesforce.com/" + kase.getId(), short:true});
+      fields.push({title: "Status", value: kase.get("status"), short:true});
+      fields.push({title: "Description", value: kase.get("description"), short:false});
+      let actions = []
+      actions.push({
+             "name": "AssignMe",
+             "text": "Assign to me",
+             "type": "button",
+             "value": "meme"
+      });
+      actions.push({
+             "name": "Complete",
+             "text": "Complete",
+             "type": "button",
+             "value": "complete"
+      });
+      attachments.push({
+        color: case_color,
+        actions: actions,
+        callback_id: "CASEACTION_" + kase.getId(),
+        fields: fields
+      });
+    });
+  }
+  console.log(attachments);
+  return attachments;
+};
+
 exports.formatAccounts = formatAccounts;
 exports.formatContacts = formatContacts;
 exports.formatContact = formatContact;
 exports.formatOpportunities = formatOpportunities;
+exports.formatCases = formatCases;
 exports.formatCase = formatCase;

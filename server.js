@@ -314,6 +314,16 @@ controller.hears(['search account (.*)', 'search (.*) in accounts'], 'direct_mes
         .catch(error => bot.reply(message, error));
 });
 
+controller.hears(['search case (.*)', 'search (.*) in cases'], 'direct_message,direct_mention,mention', (bot, message) => {
+    var name = message.match[1];
+    salesforce.findCase(name)
+        .then(cases => bot.reply(message, {
+            text: "I found these cases for that account  '" + name + "':",
+            attachments: formatter.formatCases(cases)
+        }))
+        .catch(error => bot.reply(message, error));
+});
+
 controller.hears(['search contact (.*)', 'find contact (.*)'], 'direct_message,direct_mention,mention', (bot, message) => {
     var name = message.match[1];
     salesforce.findContact(name)
