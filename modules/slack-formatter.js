@@ -10,8 +10,20 @@ let formatAccounts = accounts => {
             let fields = [];
             fields.push({title: "Name", value: account.get("Name"), short:true});
             fields.push({title: "Link", value: "https://login.salesforce.com/" + account.getId(), short:true});
-            fields.push({title: "Phone", value: account.get("Phone"), short:true});
-            fields.push({title: "Address", value: account.get("BillingStreet") + ", " + account.get("BillingCity") + " " + account.get("BillingState"), short:true});
+            info = "";
+            if(account.get("Phone")){
+              info += ' ' + account.get("Phone")
+            }
+            if(account.get("BillingStreet")){
+              info += ' ' + account.get("BillingStreet")
+            }
+            if(account.get("BillingCity")){
+              info += ' ' +  account.get("BillingCity")
+            }
+            if(account.get("BillingState")){
+              info += ' ' +  account.get("BillingState")
+            }
+            fields.push({title: "Info", value: info, short:true});
             let actions = []
             actions.push({
                    "name": "Approve",
