@@ -10,6 +10,36 @@ app.get('/', function (req, res) {
   res.send('Hello World!');
 });
 
+app.post('/actions', function (req, res) {
+  res.json({
+    "actions": [
+      {
+        "name": "recommend",
+        "value": "yes"
+      }
+    ],
+    "callback_id": "TEST_123",
+    "team": {
+      "id": "T47563693",
+      "domain": "watermelonsugar"
+    },
+    "channel": {
+      "id": "C065W1189",
+      "name": "forgotten-works"
+    },
+    "user": {
+      "id": "U045VRZFT",
+      "name": "brautigan"
+    },
+    "action_ts": "1466766246.000002",
+    "attachment_id": "1",
+    "token": SLACK_BOT_TOKEN,
+    "original_message": "",
+    "response_url": "https://hooks.slack.com/actions/T47563693/"
+    }
+  );
+});
+
 app.listen(BOT_PORT, function () {
   console.log('Example app listening on port: ' + BOT_PORT);
 });
